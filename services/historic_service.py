@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from config import Config
 from auth.token_manager import get_valid_access_token
+from zoneinfo import ZoneInfo  # ✅ Added for IST timezone
 
 
 # ==========================================================
@@ -26,10 +27,11 @@ def _validate_datetime_format(date_str: str) -> datetime:
 
 
 # ==========================================================
-# GET LAST TRADING DAY (WEEKDAY ONLY)
+# GET LAST TRADING DAY (WEEKDAY ONLY) — IST SAFE
 # ==========================================================
 def _get_last_trading_day() -> datetime:
-    today = datetime.today()
+    # ✅ Force IST timezone
+    today = datetime.now(ZoneInfo("Asia/Kolkata"))
 
     if today.weekday() == 5:  # Saturday
         return today - timedelta(days=1)
@@ -57,8 +59,8 @@ def _transform_intraday_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
         for i in range(len(timestamps)):
             ts = timestamps[i]
 
-            # Convert epoch to datetime
-            dt = datetime.fromtimestamp(ts)
+            # ✅ Force IST timezone (server-independent)
+            dt = datetime.fromtimestamp(ts, tz=ZoneInfo("Asia/Kolkata"))
 
             date_str = dt.strftime("%d-%m-%Y")
             time_str = dt.strftime("%H:%M")
@@ -119,8 +121,8 @@ def get_historical_daily_data(
         if not start_date or not end_date:
             today = _get_last_trading_day()
 
-            # End time fixed to 13:30:00
-            end_datetime = today.replace(hour=13, minute=30, second=0)
+            # End time fixed to 13:31:00 (unchanged logic)
+            end_datetime = today.replace(hour=13, minute=31, second=0)
 
             # Start time 30 days ago at 09:15:00
             start_base = today - timedelta(days=30)
