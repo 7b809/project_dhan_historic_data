@@ -126,56 +126,68 @@ def profile():
 
 
 # ==========================================================
-# 3️⃣ HISTORICAL DATA ROUTE
+# 3️⃣ HISTORICAL DATA ROUTE (GET + POST Supported)
 # ==========================================================
-@app.route("/historical", methods=["POST"])
+@app.route("/historical", methods=["GET", "POST"])
 def historical_data():
     try:
-        if not request.is_json:
-            return jsonify({
-                "status": False,
-                "message": "Request must be JSON"
-            }), 400
+        data = {}
 
-        data = request.get_json()
+        # -----------------------------------------
+        # GET → Query Parameters (Browser)
+        # -----------------------------------------
+        if request.method == "GET":
+            data = request.args.to_dict()
+
+        # -----------------------------------------
+        # POST → JSON or Form
+        # -----------------------------------------
+        elif request.method == "POST":
+
+            if request.is_json:
+                data = request.get_json() or {}
+
+            elif request.form:
+                data = request.form.to_dict()
 
         if not data:
             return jsonify({
                 "status": False,
-                "message": "Request body cannot be empty"
+                "message": "No input data provided"
             }), 400
 
+        # ------------------------------
+        # Required Fields
+        # ------------------------------
         security_id = data.get("security_id")
         exchange_segment = data.get("exchange_segment")
         instrument = data.get("instrument")
+        start_date = data.get("start_date",None)
+        end_date = data.get("end_date",None)
+        interval = data.get("interval",1)
 
-        # Required fields validation
         if not security_id:
-            return jsonify({
-                "status": False,
-                "message": "security_id is required"
-            }), 400
+            return jsonify({"status": False, "message": "security_id is required"}), 400
 
         if not exchange_segment:
-            return jsonify({
-                "status": False,
-                "message": "exchange_segment is required"
-            }), 400
+            return jsonify({"status": False, "message": "exchange_segment is required"}), 400
 
         if not instrument:
-            return jsonify({
-                "status": False,
-                "message": "instrument is required"
-            }), 400
+            return jsonify({"status": False, "message": "instrument is required"}), 400
+
+        # ------------------------------
+        # Optional Fields Handling
+        # ------------------------------
+
 
         result = get_historical_daily_data(
             security_id=str(security_id).strip(),
             exchange_segment=str(exchange_segment).strip(),
             instrument=str(instrument).strip(),
-            interval=data.get("interval", 1),
-            oi=data.get("oi", False),
-            start_date=data.get("start_date"),
-            end_date=data.get("end_date"),
+            interval=interval,
+            oi=str(data.get("oi", "false")).lower() == "true",
+            start_date=start_date,
+            end_date=end_date,
         )
 
         return jsonify(result)
@@ -186,7 +198,6 @@ def historical_data():
             "message": "Historical data fetch failed",
             "error": str(e)
         }), 500
-
 
 # ==========================================================
 # HEALTH CHECK ROUTE (Optional but Professional)
