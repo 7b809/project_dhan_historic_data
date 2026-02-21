@@ -2,6 +2,7 @@ import requests
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from config import Config
+from auth.token_manager import get_valid_access_token
 
 
 # ==========================================================
@@ -37,6 +38,7 @@ def _get_last_trading_day() -> datetime:
         return today - timedelta(days=2)
 
     return today
+
 
 # ==========================================================
 # TRANSFORM ARRAY RESPONSE TO DATE → TIME → CANDLE FORMAT
@@ -76,6 +78,8 @@ def _transform_intraday_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
 
     except Exception as e:
         return {"error": f"Transformation failed: {str(e)}"}
+
+
 # ==========================================================
 # HISTORICAL DAILY DATA
 # ==========================================================
@@ -83,8 +87,8 @@ def get_historical_daily_data(
     security_id: str,
     exchange_segment: str,
     instrument: str,
-    interval: int = 1,  
-    oi: bool = False,      
+    interval: int = 1,
+    oi: bool = False,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
 ) -> Dict[str, Any]:
@@ -99,8 +103,15 @@ def get_historical_daily_data(
         if not instrument:
             return _error("instrument is required")
 
-        if not Config.DHAN_ACCESS_TOKEN:
-            return _error("DHAN_ACCESS_TOKEN missing in Config")
+        # ==================================================
+        # 🔐 GET VALID TOKEN (AUTO RENEW LOGIC)
+        # ==================================================
+        token_data = get_valid_access_token()
+
+        if not token_data.get("status"):
+            return token_data  # Login required or renew failed
+
+        access_token = token_data["accessToken"]
 
         # --------------------------------------------------
         # DEFAULT DATETIME HANDLING (30 DAYS)
@@ -136,7 +147,7 @@ def get_historical_daily_data(
         }
 
         headers = {
-            "access-token": Config.DHAN_ACCESS_TOKEN,
+            "access-token": access_token,
             "Content-Type": "application/json"
         }
 
@@ -145,8 +156,10 @@ def get_historical_daily_data(
             json=payload,
             headers=headers
         )
+
         if response.status_code != 200:
             return _error(f"Dhan API Error: {response.text}")
+
         response_data = response.json()
         return _transform_intraday_data(response_data)
 
