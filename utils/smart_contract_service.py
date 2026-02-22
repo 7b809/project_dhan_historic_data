@@ -20,7 +20,7 @@ BASE_OPTION_API = os.getenv("BASE_OPTION_API")
 def parse_contract_query(query: str):
     """
     Parses:
-    NIFTY 24 FEB 25500 CALL
+    NIFTY 24 FEB CALL 25500 
     Returns structured dictionary
     """
 
@@ -33,8 +33,8 @@ def parse_contract_query(query: str):
     symbol = parts[0]
     day = parts[1]
     month = parts[2]
-    strike = parts[3]
-    option_type = parts[4]
+    option_type = parts[3]
+    strike = parts[4]
 
     year = datetime.now().year
     expiry = f"{day}{month}{year}"  # 24FEB2026 format
