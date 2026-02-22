@@ -148,7 +148,7 @@ def get_historical_daily_data(
             end_datetime = today.replace(hour=13, minute=31, second=0)
 
             # Start time 30 days ago at 09:15:00
-            start_base = today - timedelta(days=30)
+            start_base = today - timedelta(days=60)
             start_datetime = start_base.replace(hour=9, minute=15, second=0)
 
             start_date = start_datetime.strftime("%Y-%m-%d %H:%M:%S")
