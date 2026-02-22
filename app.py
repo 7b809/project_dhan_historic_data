@@ -234,18 +234,41 @@ def historical_data():
             "error": str(e)
         }), 500
 
-
 # ==========================================================
-# 4️⃣ SMART CONTRACT LOOKUP ROUTE
+# 4️⃣ SMART CONTRACT LOOKUP ROUTE (GET + POST)
 # ==========================================================
-@app.route("/lookup", methods=["GET"])
+@app.route("/lookup", methods=["GET", "POST"])
 def smart_contract_lookup():
     try:
-        query = request.args.get("q")
-        start_date = request.args.get("start_date", None)
-        end_date = request.args.get("end_date", None)
-        interval = int(request.args.get("interval", 1))
-        
+        # -------------------------------------------------
+        # 🔹 HANDLE GET REQUEST (Query Params)
+        # -------------------------------------------------
+        if request.method == "GET":
+            query = request.args.get("q")
+            start_date = request.args.get("start_date")
+            end_date = request.args.get("end_date")
+            interval = int(request.args.get("interval", 1))
+
+        # -------------------------------------------------
+        # 🔹 HANDLE POST REQUEST (JSON Body)
+        # -------------------------------------------------
+        elif request.method == "POST":
+            data = request.get_json()
+
+            if not data:
+                return jsonify({
+                    "status": False,
+                    "message": "Missing JSON body"
+                }), 400
+
+            query = data.get("q")
+            start_date = data.get("start_date")
+            end_date = data.get("end_date")
+            interval = int(data.get("interval", 1))
+
+        # -------------------------------------------------
+        # 🔹 VALIDATION
+        # -------------------------------------------------
         if not query:
             return jsonify({
                 "status": False,
@@ -255,18 +278,27 @@ def smart_contract_lookup():
         query = query.strip()
 
         # -------------------------------------------------
-        # 🔥 CASE 1: If numeric → Treat as SECURITY_ID
+        # 🔥 CASE 1: If numeric → SECURITY_ID
         # -------------------------------------------------
         if query.isdigit():
-            result = smart_contract_lookup_service(query, start_date=start_date, end_date=end_date, interval=interval)
+            result = smart_contract_lookup_service(
+                query,
+                start_date=start_date,
+                end_date=end_date,
+                interval=interval
+            )
 
-        else:  
         # -------------------------------------------------
-        # 🔥 CASE 2: Normal Contract Lookup
+        # 🔥 CASE 2: Symbol Lookup
         # -------------------------------------------------
-           
-            result = smart_contract_lookup_service(query, start_date=start_date, end_date=end_date, interval=interval)
-        
+        else:
+            result = smart_contract_lookup_service(
+                query,
+                start_date=start_date,
+                end_date=end_date,
+                interval=interval
+            )
+
         return jsonify(result)
 
     except Exception as e:
@@ -275,6 +307,7 @@ def smart_contract_lookup():
             "message": "Lookup failed",
             "error": str(e)
         }), 500
+        
 
 # ==========================================================
 # HEALTH CHECK ROUTE (Optional but Professional)
