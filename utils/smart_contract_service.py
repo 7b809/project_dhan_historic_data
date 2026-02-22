@@ -50,7 +50,7 @@ def parse_contract_query(query: str):
 # ==========================================================
 # FETCH SECURITY FROM DEPLOYED DOMAIN (UNCHANGED LOGIC)
 # ==========================================================
-def fetch_security_from_domain(contract_data: dict):
+def fetch_security_from_domain(contract_data: dict, is_digits: bool = False):
     """
     Calls deployed option API
     Step 1 → contract-lookup
@@ -63,19 +63,22 @@ def fetch_security_from_domain(contract_data: dict):
     # -------------------------
     # Step 1: Contract Lookup
     # -------------------------
-    contract_url = f"{BASE_OPTION_API}/contract-lookup"
+    if not is_digits:
+            
+        contract_url = f"{BASE_OPTION_API}/contract-lookup"
 
-    contract_response = requests.get(contract_url, params=contract_data)
+        contract_response = requests.get(contract_url, params=contract_data)
 
-    if contract_response.status_code != 200:
-        return None
+        if contract_response.status_code != 200:
+            return None
 
-    contract_json = contract_response.json()
-    security_id = contract_json.get("SECURITY_ID")
+        contract_json = contract_response.json()
+        security_id = contract_json.get("SECURITY_ID")
 
-    if not security_id:
-        return None
-
+        if not security_id:
+            return None
+    if is_digits and contract_data.isdigit():
+        security_id = contract_data.strip()
     # -------------------------
     # Step 2: Full Security Fetch
     # -------------------------
@@ -128,8 +131,9 @@ def smart_contract_lookup_service(
     ✔ Historical optional
     ✔ No logic removed
     """
-
-    parsed = parse_contract_query(query)
+    digits_flag = query.strip().isdigit()
+    parsed = parse_contract_query(query) if not digits_flag else query.strip()
+    
 
     if not parsed:
         return {
@@ -137,7 +141,7 @@ def smart_contract_lookup_service(
             "message": "Invalid format. Use: NIFTY 24 FEB 25500 CALL"
         }
 
-    security_data = fetch_security_from_domain(parsed)
+    security_data = fetch_security_from_domain(parsed,digits_flag)
 
     if not security_data:
         return {
@@ -149,6 +153,7 @@ def smart_contract_lookup_service(
     security_id = security_data.get("SECURITY_ID")
     exchange_segment = map_exchange_segment(security_data)    
     instrument = security_data.get("INSTRUMENT")
+    security_data['exchange_segment'] = exchange_segment
     
     historical_data = get_historical_daily_data(
             security_id=str(security_id),
@@ -159,6 +164,10 @@ def smart_contract_lookup_service(
             start_date=start_date,
             end_date=end_date
         )
+    res_obj = {
+        "status": True,
+        "security_data": security_data,
+        "historical_data": historical_data
+    }
 
-
-    return historical_data if historical_data else security_data
+    return res_obj 

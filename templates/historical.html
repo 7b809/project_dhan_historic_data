@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h3 class="mb-4 text-center">Historical Data</h3>
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+
+        <div class="box">
+
+            <form method="POST" onsubmit="combineDateTime()">
+
+                <div class="row">
+
+                    <!-- Security Inputs -->
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Security ID</label>
+                        <input type="text" name="security_id"
+                               class="form-control" required>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Exchange Segment</label>
+                        <input type="text" name="exchange_segment"
+                               class="form-control" placeholder="NSE_EQ" required>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Instrument</label>
+                        <input type="text" name="instrument"
+                               class="form-control" placeholder="EQUITY" required>
+                    </div>
+
+                    <!-- Interval -->
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Interval</label>
+                        <input type="number" name="interval"
+                               class="form-control" value="1">
+                    </div>
+
+                    <!-- OI -->
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">OI</label>
+                        <select name="oi" class="form-control">
+                            <option value="false" selected>false</option>
+                            <option value="true">true</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <hr>
+
+                <div class="row">
+
+                    <!-- Start Date -->
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" id="startDate"
+                               class="form-control" required>
+                    </div>
+
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Start Time</label>
+                        <input type="time" id="startTime"
+                               class="form-control" value="09:15" required>
+                    </div>
+
+                    <!-- End Date -->
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">End Date</label>
+                        <input type="date" id="endDate"
+                               class="form-control" required>
+                    </div>
+
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">End Time</label>
+                        <input type="time" id="endTime"
+                               class="form-control" value="13:30" required>
+                    </div>
+
+                </div>
+
+                <!-- Hidden combined fields -->
+                <input type="hidden" name="start_date" id="finalStart">
+                <input type="hidden" name="end_date" id="finalEnd">
+
+                <div class="text-center mt-3">
+                    <button class="btn btn-success">
+                        Fetch Historical Data
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+
+        {% if data %}
+            <div class="box mt-4">
+                <h5 class="text-center mb-3">Result</h5>
+
+                {% if data.status == "error" %}
+                    <div class="alert alert-danger text-center">
+                        ❌ {{ data.message }}
+                    </div>
+                {% else %}
+                    <div class="alert alert-success text-center">
+                        ✔ Historical Data Fetched Successfully
+                    </div>
+                {% endif %}
+
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<script>
+function combineDateTime() {
+
+    const startDate = document.getElementById("startDate").value;
+    const startTime = document.getElementById("startTime").value;
+
+    const endDate = document.getElementById("endDate").value;
+    const endTime = document.getElementById("endTime").value;
+
+    document.getElementById("finalStart").value =
+        startDate + " " + startTime + ":00";
+
+    document.getElementById("finalEnd").value =
+        endDate + " " + endTime + ":00";
+}
+
+// Auto-fill today's date
+window.onload = function() {
+    const today = new Date().toISOString().split("T")[0];
+    document.getElementById("startDate").value = today;
+    document.getElementById("endDate").value = today;
+};
+</script>
+
+{% endblock %}

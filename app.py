@@ -29,6 +29,35 @@ def handle_exception(e):
         "error": str(e)
     }), 500
 
+
+@app.route("/profile-page")
+def profile_page():
+    result = get_profile()
+    return render_template("profile.html", data=result)
+
+@app.route("/historical-page", methods=["GET", "POST"])
+def historical_page():
+    result = None
+    if request.method == "POST":
+        result = get_historical_daily_data(
+            security_id=request.form.get("security_id"),
+            exchange_segment=request.form.get("exchange_segment"),
+            instrument=request.form.get("instrument"),
+            interval=request.form.get("interval"),
+            start_date=request.form.get("start_date"),
+            end_date=request.form.get("end_date"),
+        )
+    return render_template("historical.html", data=result)
+
+@app.route("/lookup-page", methods=["GET", "POST"])
+def lookup_page():
+    result = None
+    if request.method == "POST":
+        query = request.form.get("query")
+        result = smart_contract_lookup_service(query)
+    return render_template("lookup.html", data=result)
+
+
 # ==========================================================
 # 🏠 HOME PAGE (HTML LOGIN PAGE)
 # ==========================================================
@@ -169,7 +198,9 @@ def historical_data():
         start_date = data.get("start_date",None)
         end_date = data.get("end_date",None)
         interval = data.get("interval",1)
-
+        oi = data.get("oi", "false").lower() == "true"
+        
+        
         if not security_id:
             return jsonify({"status": False, "message": "security_id is required"}), 400
 
@@ -189,7 +220,7 @@ def historical_data():
             exchange_segment=str(exchange_segment).strip(),
             instrument=str(instrument).strip(),
             interval=interval,
-            oi=str(data.get("oi", "false")).lower() == "true",
+            oi=oi,
             start_date=start_date,
             end_date=end_date,
         )
@@ -211,7 +242,10 @@ def historical_data():
 def smart_contract_lookup():
     try:
         query = request.args.get("q")
-
+        start_date = request.args.get("start_date", None)
+        end_date = request.args.get("end_date", None)
+        interval = int(request.args.get("interval", 1))
+        
         if not query:
             return jsonify({
                 "status": False,
@@ -224,35 +258,15 @@ def smart_contract_lookup():
         # 🔥 CASE 1: If numeric → Treat as SECURITY_ID
         # -------------------------------------------------
         if query.isdigit():
+            result = smart_contract_lookup_service(query, start_date=start_date, end_date=end_date, interval=interval)
 
-            # Direct historical fetch OR security fetch
-            # Here we call your existing historical route logic
-
-            # You may also call your deployed option API
-            BASE_OPTION_API = os.getenv("BASE_OPTION_API")
-
-            security_url = f"{BASE_OPTION_API}/security"
-
-            response = requests.get(
-                security_url,
-                params={"security_id": query}
-            )
-
-            if response.status_code != 200:
-                return jsonify({
-                    "status": False,
-                    "message": "Security ID not found"
-                }), 404
-
-            return jsonify({
-                "status": True,
-                "data": response.json()
-            })
-
+        else:  
         # -------------------------------------------------
         # 🔥 CASE 2: Normal Contract Lookup
         # -------------------------------------------------
-        result = smart_contract_lookup_service(query)
+           
+            result = smart_contract_lookup_service(query, start_date=start_date, end_date=end_date, interval=interval)
+        
         return jsonify(result)
 
     except Exception as e:

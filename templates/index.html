@@ -1,54 +1,33 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Dhan Login</title>
-    <style>
-        body {
-            font-family: Arial;
-            background: #f4f6f9;
-            text-align: center;
-            margin-top: 100px;
-        }
-        .box {
-            background: white;
-            padding: 30px;
-            display: inline-block;
-            border-radius: 8px;
-            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
-        }
-        input {
-            padding: 10px;
-            width: 200px;
-            margin: 10px 0;
-        }
-        button {
-            padding: 10px 20px;
-            cursor: pointer;
-        }
-        .success {
-            color: green;
-        }
-        .error {
-            color: red;
-        }
-    </style>
-</head>
-<body>
+{% extends "base.html" %}
 
-<div class="box">
-    <h2>Dhan TOTP Login</h2>
+{% block content %}
 
-    <form method="POST">
-        <input type="text" name="totp" placeholder="Enter 6-digit TOTP" required />
-        <br>
-        <button type="submit">Generate Token</button>
-    </form>
+<div class="row justify-content-center">
+    <div class="col-md-4">
+        <div class="box text-center">
 
-    {% if message %}
-        <p class="{{ status_class }}">{{ message }}</p>
-    {% endif %}
+            <h3>Dhan TOTP Login</h3>
 
+            <form method="POST">
+                <input type="text"
+                       name="totp"
+                       class="form-control mb-3"
+                       placeholder="Enter 6-digit TOTP"
+                       required>
+
+                <button type="submit" class="btn btn-primary w-100">
+                    Generate Token
+                </button>
+            </form>
+
+            {% if message %}
+                <p class="mt-3 {{ status_class }}">
+                    {{ message }}
+                </p>
+            {% endif %}
+
+        </div>
+    </div>
 </div>
 
-</body>
-</html>
+{% endblock %}

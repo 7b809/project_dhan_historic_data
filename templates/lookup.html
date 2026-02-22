@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h3 class="mb-4 text-center">Smart Contract Lookup</h3>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+
+        <div class="box">
+
+            <form method="POST">
+                <div class="mb-3">
+                    <label class="form-label">
+                        Enter Contract (Example: NIFTY 24 FEB 25500 CALL)
+                    </label>
+
+                    <input type="text"
+                           name="query"
+                           class="form-control"
+                           placeholder="NIFTY 24 FEB 25500 CALL"
+                           required>
+                </div>
+
+                <button class="btn btn-success w-100">
+                    Search
+                </button>
+            </form>
+
+            {% if data %}
+                <div class="mt-4">
+
+                    {% if data.status %}
+                        <div class="alert alert-success text-center">
+                            ✔ Contract fetched successfully!
+                        </div>
+
+                        <!-- ✅ Show Security Info Cleanly -->
+                        <div class="card shadow-sm mb-3">
+                            <div class="card-body">
+
+                                <h5 class="mb-3 text-center">
+                                    {{ data.security_data.SYMBOL_NAME }}
+                                </h5>
+
+                                <table class="table table-bordered table-sm">
+                                    <tr>
+                                        <th>Security ID</th>
+                                        <td>{{ data.security_data.SECURITY_ID }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Instrument</th>
+                                        <td>{{ data.security_data.INSTRUMENT }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Exchange Segment</th>
+                                        <td>{{ data.security_data.exchange_segment }}</td>
+                                    </tr>
+
+                                    {% if data.security_data.EXPIRY_DATE %}
+                                    <tr>
+                                        <th>Expiry</th>
+                                        <td>{{ data.security_data.EXPIRY_DATE }}</td>
+                                    </tr>
+                                    {% endif %}
+
+                                    {% if data.security_data.STRIKE_PRICE %}
+                                    <tr>
+                                        <th>Strike</th>
+                                        <td>{{ data.security_data.STRIKE_PRICE }}</td>
+                                    </tr>
+                                    {% endif %}
+
+                                </table>
+
+                            </div>
+                        </div>
+
+                        <!-- Download Button -->
+                        <div class="text-center">
+                            <button class="btn btn-primary"
+                                    onclick="downloadJSON()">
+                                Download JSON
+                            </button>
+                        </div>
+
+                        <!-- Hidden JSON -->
+                        <pre id="jsonData" style="display:none;">
+{{ data | tojson(indent=2) }}
+                        </pre>
+
+                    {% else %}
+                        <div class="alert alert-danger text-center">
+                            ❌ {{ data.message }}
+                        </div>
+                    {% endif %}
+
+                </div>
+            {% endif %}
+
+        </div>
+
+    </div>
+</div>
+
+{% if data and data.status %}
+<script>
+function downloadJSON() {
+
+    const jsonText = document.getElementById("jsonData").innerText;
+
+    const blob = new Blob([jsonText], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    const securityData = {{ data.security_data | tojson }};
+
+    let fileName = securityData.SYMBOL_NAME || "contract_data";
+    fileName = fileName.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "");
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName + ".json";
+
+    document.body.appendChild(a);
+    a.click();
+
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+</script>
+{% endif %}
+
+{% endblock %}

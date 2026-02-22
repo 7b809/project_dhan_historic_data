@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h3 class="mb-4">Profile Details</h3>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+
+        {% if data and data.status %}
+
+            <div class="box">
+
+                <h5 class="mb-3">Account Information</h5>
+
+                <table class="table table-bordered">
+                    <tbody>
+                        {% for key, value in data.data.items() %}
+                            <tr>
+                                <th>{{ key }}</th>
+                                <td>{{ value }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+            </div>
+
+        {% else %}
+
+            <div class="alert alert-danger">
+                {{ data.message if data else "Profile not available" }}
+            </div>
+
+        {% endif %}
+
+    </div>
+</div>
+
+{% endblock %}
