@@ -4,6 +4,10 @@ from auth.token_service import generate_and_store_token
 from services.profile_service import get_profile
 from services.historic_service import get_historical_daily_data
 
+import requests,os
+from utils.smart_contract_service import smart_contract_lookup_service
+
+
 from flask import Flask, request, jsonify, render_template
 app = Flask(__name__)
 
@@ -196,6 +200,65 @@ def historical_data():
         return jsonify({
             "status": False,
             "message": "Historical data fetch failed",
+            "error": str(e)
+        }), 500
+
+
+# ==========================================================
+# 4️⃣ SMART CONTRACT LOOKUP ROUTE
+# ==========================================================
+@app.route("/lookup", methods=["GET"])
+def smart_contract_lookup():
+    try:
+        query = request.args.get("q")
+
+        if not query:
+            return jsonify({
+                "status": False,
+                "message": "Missing 'q' parameter"
+            }), 400
+
+        query = query.strip()
+
+        # -------------------------------------------------
+        # 🔥 CASE 1: If numeric → Treat as SECURITY_ID
+        # -------------------------------------------------
+        if query.isdigit():
+
+            # Direct historical fetch OR security fetch
+            # Here we call your existing historical route logic
+
+            # You may also call your deployed option API
+            BASE_OPTION_API = os.getenv("BASE_OPTION_API")
+
+            security_url = f"{BASE_OPTION_API}/security"
+
+            response = requests.get(
+                security_url,
+                params={"security_id": query}
+            )
+
+            if response.status_code != 200:
+                return jsonify({
+                    "status": False,
+                    "message": "Security ID not found"
+                }), 404
+
+            return jsonify({
+                "status": True,
+                "data": response.json()
+            })
+
+        # -------------------------------------------------
+        # 🔥 CASE 2: Normal Contract Lookup
+        # -------------------------------------------------
+        result = smart_contract_lookup_service(query)
+        return jsonify(result)
+
+    except Exception as e:
+        return jsonify({
+            "status": False,
+            "message": "Lookup failed",
             "error": str(e)
         }), 500
 
