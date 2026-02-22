@@ -19,13 +19,36 @@ def _error(message: str) -> Dict[str, Any]:
 # ==========================================================
 # VALIDATE DATETIME FORMAT
 # ==========================================================
-def _validate_datetime_format(date_str: str) -> datetime:
+def _validate_datetime_format(date_str: str, is_start: bool) -> str:
+    """
+    Accepts:
+    - YYYY-MM-DD HH:MM:SS
+    - DD-MM-YYYY
+
+    Returns formatted string: YYYY-MM-DD HH:MM:SS
+    """
+
     try:
-        return datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+        # Case 1: Full datetime already provided
+        datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+        return date_str
+
     except ValueError:
-        raise ValueError("Datetime format must be YYYY-MM-DD HH:MM:SS")
+        try:
+            # Case 2: Only date provided in DD-MM-YYYY
+            base_date = datetime.strptime(date_str, "%d-%m-%Y")
 
+            if is_start:
+                base_date = base_date.replace(hour=9, minute=15, second=0)
+            else:
+                base_date = base_date.replace(hour=13, minute=31, second=0)
 
+            return base_date.strftime("%Y-%m-%d %H:%M:%S")
+
+        except ValueError:
+            raise ValueError(
+                "Date must be either YYYY-MM-DD HH:MM:SS or DD-MM-YYYY"
+            )
 # ==========================================================
 # GET LAST TRADING DAY (WEEKDAY ONLY) — IST SAFE
 # ==========================================================
@@ -132,8 +155,12 @@ def get_historical_daily_data(
             end_date = end_datetime.strftime("%Y-%m-%d %H:%M:%S")
 
         # Validate datetime format
-        _validate_datetime_format(start_date)
-        _validate_datetime_format(end_date)
+        # ==================================================
+        # VALIDATE / FORMAT USER PROVIDED DATES
+        # ==================================================
+
+        start_date = _validate_datetime_format(start_date, is_start=True)
+        end_date = _validate_datetime_format(end_date, is_start=False)
 
         # --------------------------------------------------
         # API PAYLOAD
